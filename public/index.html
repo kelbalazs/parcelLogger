@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Delivery</title>
+  <!-- Bootstrap CSS -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+    crossorigin="anonymous"
+  />
+</head>
+<body>
+  <div class="container my-5">
+    <h2 class="mb-4">Add Delivery</h2>
+    <form id="deliveryForm" class="mb-4">
+      <div class="mb-3">
+        <label for="apartment" class="form-label">Apartment:</label>
+        <select id="apartment" name="apartment" class="form-select" required></select>
+      </div>
+      <div class="mb-3">
+        <label for="courier" class="form-label">Courier:</label>
+        <input type="text" id="courier" name="courier" class="form-control" required />
+      </div>
+      <div class="mb-3">
+        <label for="addressName" class="form-label">Address Name:</label>
+        <input type="text" id="addressName" name="addressName" class="form-control" required />
+      </div>
+      <div class="mb-3">
+        <label for="description" class="form-label">Description:</label>
+        <input type="text" id="description" name="description" class="form-control" required />
+      </div>
+      <div class="mb-3">
+        <label for="deliveryDate" class="form-label">Delivery Date:</label>
+        <input type="date" id="deliveryDate" name="deliveryDate" class="form-control" required />
+      </div>
+      <div class="mb-3">
+        <label for="deliveryTime" class="form-label">Delivery Time:</label>
+        <input type="time" id="deliveryTime" name="deliveryTime" class="form-control" required />
+      </div>
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+
+    <div class="mb-3">
+      <label for="apartmentFilter" class="form-label">Filter by Apartment:</label>
+      <select id="apartmentFilter" class="form-select">
+        <option value="">All Apartments</option>
+      </select>
+    </div>
+
+    <div class="existing-deliveries">
+      <h2>Existing Deliveries</h2>
+      <ul id="existingDeliveriesList" class="list-group"></ul>
+    </div>
+  </div>
+
+  <script>
+    const apartmentSelect = document.getElementById("apartment");
+    const apartmentFilterSelect = document.getElementById("apartmentFilter");
+    const existingDeliveriesList = document.getElementById("existingDeliveriesList");
+    const form = document.getElementById("deliveryForm");
+
+    // Fetch apartment options from the server
+    fetch("http://localhost:3000/apartments")
+      .then((response) => response.json())
+      .then((apartments) => {
+        // Populate the apartments in the dropdown
+        apartments.forEach((apartment) => {
+          const option = document.createElement("option");
+          option.value = apartment.id;
+          option.text = apartment.name;
+          apartmentSelect.add(option);
+
+          // Populate the apartments in the filter dropdown
+          const filterOption = document.createElement("option");
+          filterOption.value = apartment.id;
+          filterOption.text = apartment.name;
+          apartmentFilterSelect.add(filterOption);
+        });
+
+        // Fetch and display deliveries for the first apartment
+        fetchAndDisplayDeliveries(apartments[0].id);
+      })
+      .catch((error) => {
+        console.error("Error fetching apartments:", error);
+      });
+
+    function fetchAndDisplayDeliveries(apartmentId = null) {
+      let url = "http://localhost:3000/deliveries";
+      if (apartmentId) {
+        url = `http://localhost:3000/deliveries?apartment_id=${apartmentId}`;
+      }
+
+      fetch(url)
+        .then((response) => response.json())
+        .then((deliveries) => {
+          existingDeliveriesList.innerHTML = ""; // Clear previous list items
+
+          if (deliveries.length === 0) {
+            const listItem = document.createElement("li");
+            listItem.textContent = "No existing deliveries";
+            existingDeliveriesList.appendChild(listItem);
+          } else {
+            deliveries.forEach((delivery) => {
+              const listItem = document.createElement("li");
+              listItem.classList.add("list-group-item");
+              listItem.classList.add("delivery-item");
+              const deliveryInfo = document.createElement("p");
+              deliveryInfo.textContent = `Courier: ${
+                delivery.courier
+              }, Address Name: ${delivery.adresse_name}, Description: ${
+                delivery.description
+              }, Delivery Date: ${new Date(delivery.delivery_date).toLocaleDateString(
+                "en-US",
+                {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                }
+              )}, Delivery Time: ${
+                delivery.delivery_time
+              }, Status: ${delivery.status ? "Delivered" : "Pending"}`;
+              listItem.appendChild(deliveryInfo);
+
+              // Add a button to change the delivery status
+              const statusButton = document.createElement("button");
+              statusButton.textContent = delivery.status
+                ? "Mark as Pending"
+                : "Mark as Delivered";
+              statusButton.classList.add("btn");
+              statusButton.classList.add("btn-sm");
+              statusButton.classList.add(delivery.status ? "btn-warning" : "btn-success");
+              statusButton.addEventListener("click", () => {
+                const newStatus = !delivery.status;
+                updateDeliveryStatus(delivery.id, newStatus);
+                statusButton.textContent = newStatus
+                  ? "Mark as Pending"
+                  : "Mark as Delivered";
+                statusButton.classList.toggle("btn-success");
+                statusButton.classList.toggle("btn-warning");
+              });
+              listItem.appendChild(statusButton);
+
+              existingDeliveriesList.appendChild(listItem);
+            });
+          }
+        })
+        .catch((error) =>
+          console.error("Error fetching existing deliveries:", error)
+        );
+    }
+
+    apartmentSelect.addEventListener("change", () => {
+      const selectedApartmentId = apartmentSelect.value;
+      fetchAndDisplayDeliveries(selectedApartmentId);
+    });
+
+    apartmentFilterSelect.addEventListener("change", () => {
+      const selectedApartmentId = apartmentFilterSelect.value || null;
+      fetchAndDisplayDeliveries(selectedApartmentId);
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const apartmentId = apartmentSelect.value;
+      const courier = document.getElementById("courier").value;
+      const addressName = document.getElementById("addressName").value;
+      const description = document.getElementById("description").value;
+      const deliveryDate = document.getElementById("deliveryDate").value;
+      const deliveryTime = document.getElementById("deliveryTime").value;
+
+      const delivery = {
+        apartment_id: apartmentId,
+        courier,
+        adresse_name: addressName,
+        description,
+        delivery_date: deliveryDate,
+        delivery_time: deliveryTime,
+        status: false,
+      };
+
+      try {
+        const response = await fetch("http://localhost:3000/deliveries", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(delivery),
+        });
+
+        if (response.ok) {
+          alert("Delivery submitted successfully");
+          form.reset();
+          fetchAndDisplayDeliveries(apartmentId);
+        } else {
+          alert("Error submitting delivery");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("An error occurred while submitting the delivery");
+      }
+    });
+
+    function updateDeliveryStatus(deliveryId, newStatus) {
+      fetch(`http://localhost:3000/deliveries/${deliveryId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
+        .then((response) => {
+          if (response.ok) {
+            console.log("Delivery status updated successfully");
+            fetchAndDisplayDeliveries(
+              apartmentFilterSelect.value || null
+            );
+          } else {
+            console.error("Error updating delivery status");
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    }
+  </script>
+</body>
+</html>
