@@ -90,7 +90,7 @@
     function fetchAndDisplayDeliveries(apartmentId = null) {
       let url = "https://parcellogger-1.onrender.com/deliveries";
       if (apartmentId) {
-        url = `http://localhost:3000/deliveries?apartment_id=${apartmentId}`;
+        url = `https://parcellogger-1.onrender.com/deliveries?apartment_id=${apartmentId}`;
       }
 
       fetch(url)
