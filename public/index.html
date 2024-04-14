@@ -27,7 +27,7 @@
 
       useEffect(() => {
         // Fetch apartment options from the server
-        fetch('http://localhost:3000/apartments')
+        fetch('https://parcellogger-1.onrender.com/apartments')
           .then((response) => response.json())
           .then((apartments) => {
             setApartments(apartments);
@@ -39,9 +39,9 @@
       }, []);
 
       const fetchAndDisplayDeliveries = (apartmentId = null) => {
-        let url = 'http://localhost:3000/deliveries';
+        let url = 'https://parcellogger-1.onrender.com/deliveries';
         if (apartmentId) {
-          url = `http://localhost:3000/deliveries?apartment_id=${apartmentId}`;
+          url = `https://parcellogger-1.onrender.com/deliveries?apartment_id=${apartmentId}`;
         }
 
         fetch(url)
@@ -78,7 +78,7 @@
         };
 
         try {
-          const response = await fetch('http://localhost:3000/deliveries', {
+          const response = await fetch('https://parcellogger-1.onrender.com/deliveries', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -100,7 +100,7 @@
       };
 
       const handleStatusUpdate = (deliveryId, newStatus) => {
-        fetch(`http://localhost:3000/deliveries/${deliveryId}`, {
+        fetch(`https://parcellogger-1.onrender.com/deliveries/${deliveryId}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
